@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="kk" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика Control — Студенттер практикасын бақылау жүйесі</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fef2f2',
+                            100: '#ffe1e1',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(220, 38, 38, 0.4);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(220, 38, 38, 0.7);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+
+    <!-- TOP HEADER / NAVBAR -->
+    <header id="top-navbar"
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 transition-colors shadow-sm hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="mobile-menu-btn"
+                    class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="navigateTo('dashboard')">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <span
+                            class="text-lg font-bold bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">Практика
+                            Control</span>
+                        <span id="role-badge"
+                            class="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-brand-700 font-semibold dark:bg-red-900/40 dark:text-red-300">Студент</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- Quick Search -->
+                <div id="curator-search-wrapper" class="hidden md:block relative">
+                    <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)"
+                        placeholder="Студент іздеу..."
+                        class="w-48 lg:w-64 pl-9 pr-4 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+
+                <!-- Language Toggle -->
+                <button onclick="toggleLanguage()"
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium flex items-center space-x-1"
+                    title="Тілді ауыстыру">
+                    <i class="fa-solid fa-globe text-brand-600"></i>
+                    <span id="lang-label">ҚАЗ</span>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()"
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-yellow-400"
+                    title="Тақырыпты ауыстыру">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Notifications Icon -->
+                <button onclick="navigateTo('notifications')"
+                    class="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="notif-badge"
+                        class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-brand-600 rounded-full ring-2 ring-white dark:ring-gray-800"></span>
+                </button>
+
+                <!-- User Profile Brief -->
+                <div class="flex items-center space-x-3 pl-2 border-l border-gray-200 dark:border-gray-700 cursor-pointer"
+                    onclick="navigateTo('profile')">
+                    <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300 flex items-center justify-center font-bold text-sm"
+                        id="user-avatar-initials">
+                        ЕБ
+                    </div>
+                    <div class="hidden sm:block text-left text-xs">
+                        <div class="font-semibold text-gray-800 dark:text-gray-200" id="user-display-name">Бегарыс Е.
+                        </div>
+                        <div class="text-gray-500 dark:text-gray-400" id="user-sub-info">301 РПО</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- SIDEBAR NAV -->
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out flex flex-col justify-between hidden">
+            <div class="p-4 space-y-1 overflow-y-auto">
+                <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                    id="nav-section-title">
+                    Мәзір
+                </div>
+
+                <nav class="space-y-1" id="nav-items-container">
+                    <!-- Nav buttons dynamically populated by JS -->
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                <button onclick="exportData()"
+                    class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <i class="fa-solid fa-file-pdf text-brand-600"></i>
+                    <span data-i18n="export_report">Есепті сақтау / Print</span>
+                </button>
+                <button onclick="confirmLogout()"
+                    class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span data-i18n="logout">Шығу</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- BACKDROP FOR MOBILE SIDEBAR -->
+        <div id="sidebar-backdrop" onclick="toggleSidebar(false)"
+            class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden"></div>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+
+            <!-- 1. WELCOME SCREEN -->
+            <section id="screen-welcome"
+                class="fade-in flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
+                <div
+                    class="w-20 h-20 bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl flex items-center justify-center text-white text-4xl shadow-xl mb-6">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4">
+                    Практика <span
+                        class="bg-gradient-to-r from-brand-600 to-brand-800 bg-clip-text text-transparent">Control</span>
+                </h1>
+                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-xl mb-8 leading-relaxed">
+                    Студенттердің өндірістік/оқу практикасын бақылау, электронды журнал жүргізу және фото/видео есеп
+                    тапсырудың бірыңғай жүйесі.
+                </p>
+                <button onclick="showScreen('screen-role')"
+                    class="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center space-x-3 text-lg">
+                    <span data-i18n="enter_system">Жүйеге кіру</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </section>
+
+            <!-- 2. ROLE SELECTION SCREEN -->
+            <section id="screen-role"
+                class="fade-in hidden flex flex-col items-center justify-center min-h-[80vh] px-4">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2" data-i18n="select_role">Жүйедегі
+                    рөліңізді таңдаңыз</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-8" data-i18n="select_role_desc">Кіру режимін таңдап,
+                    жұмысты бастаңыз</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl w-full">
+                    <!-- Student Card -->
+                    <div onclick="selectRole('student')"
+                        class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 cursor-pointer shadow-sm hover:shadow-md transition flex flex-col items-center text-center group">
+                        <div
+                            class="w-16 h-16 bg-red-100 dark:bg-red-900/40 text-brand-600 dark:text-red-400 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2" data-i18n="role_student">
+                            Студент ретінде кіру</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="role_student_desc">Күнделікті
+                            есеп толтыру, фото/видео тіркеу, баға мен тапсырмаларды бақылау.</p>
+                    </div>
+
+                    <!-- Curator Card -->
+                    <div onclick="selectRole('curator')"
+                        class="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 cursor-pointer shadow-sm hover:shadow-md transition flex flex-col items-center text-center group">
+                        <div
+                            class="w-16 h-16 bg-red-100 dark:bg-red-900/40 text-brand-600 dark:text-red-400 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2" data-i18n="role_curator">
+                            Куратор ретінде кіру</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="role_curator_desc">Топ
+                            студенттерін тексеру, пікір қалдыру, баға қою және статистиканы көру.</p>
+                    </div>
+                </div>
+
+                <button onclick="showScreen('screen-welcome')"
+                    class="mt-8 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span data-i18n="back">Артқа оралу</span>
+                </button>
+            </section>
+
+            <!-- 3. STUDENT LOGIN SCREEN -->
+            <section id="screen-student-login"
+                class="fade-in hidden flex flex-col items-center justify-center min-h-[80vh] px-4">
+                <div
+                    class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-md w-full">
+                    <div class="text-center mb-6">
+                        <div
+                            class="w-12 h-12 bg-red-100 text-brand-600 rounded-xl inline-flex items-center justify-center text-xl mb-2">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="student_auth">Студент
+                            кабинетіне кіру</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" data-i18n="enter_iin_pass">ЖСН мен
+                            парольді енгізіңіз</p>
+                    </div>
+
+                    <form onsubmit="handleStudentLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1" data-i18n="iin">ЖСН
+                                (12 цифр)</label>
+                            <input type="text" id="student-iin" maxlength="12" placeholder="123456789012"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1"
+                                data-i18n="password">Пароль</label>
+                            <input type="password" id="student-password" placeholder="••••••••"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+                        </div>
+
+                        <div id="student-login-error"
+                            class="hidden p-3 rounded-lg bg-red-50 text-red-700 text-xs font-medium border border-red-200">
+                            <!-- Error message -->
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow transition"
+                            data-i18n="login_btn">
+                            Кіру
+                        </button>
+                    </form>
+
+                    <!-- Demo Credentials Helper -->
+                    <div
+                        class="mt-6 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs text-gray-600 dark:text-gray-300">
+                        <div class="font-bold mb-1 text-brand-600"><i class="fa-solid fa-circle-info"></i> Demo
+                            Аккаунттар:</div>
+                        <div><b>ЖСН:</b> 123456789012 (Елубаев Бегарыс)</div>
+                        <div><b>Пароль:</b> соңғы 4 цифр ИИН (для demo: 9012)</div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <button onclick="showScreen('screen-role')" class="text-xs text-gray-500 hover:underline"
+                            data-i18n="back_to_role">Рөлдерді таңдауға қайту</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. CURATOR LOGIN SCREEN -->
+            <section id="screen-curator-login"
+                class="fade-in hidden flex flex-col items-center justify-center min-h-[80vh] px-4">
+                <div
+                    class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-md w-full">
+                    <div class="text-center mb-6">
+                        <div
+                            class="w-12 h-12 bg-red-100 text-brand-600 rounded-xl inline-flex items-center justify-center text-xl mb-2">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="curator_auth">Куратор
+                            кабинетіне кіру</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" data-i18n="enter_curator_cred">Логин
+                            мен парольді енгізіңіз</p>
+                    </div>
+
+                    <form onsubmit="handleCuratorLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1"
+                                data-i18n="login_username">Логин / ІІН</label>
+                            <input type="text" id="curator-username" placeholder="curator01"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1"
+                                data-i18n="password">Пароль</label>
+                            <input type="password" id="curator-password" placeholder="••••••••"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+                        </div>
+
+                        <div id="curator-login-error"
+                            class="hidden p-3 rounded-lg bg-red-50 text-red-700 text-xs font-medium border border-red-200">
+                            <!-- Error -->
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow transition"
+                            data-i18n="login_btn">
+                            Кіру
+                        </button>
+                    </form>
+
+                    <!-- Demo Credentials Helper -->
+                    <div
+                        class="mt-6 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs text-gray-600 dark:text-gray-300">
+                        <div class="font-bold mb-1 text-brand-600"><i class="fa-solid fa-circle-info"></i> Demo Куратор:
+                        </div>
+                        <div><b>Логин:</b> curator01</div>
+                        <div><b>Пароль:</b> curator123</div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <button onclick="showScreen('screen-role')" class="text-xs text-gray-500 hover:underline"
+                            data-i18n="back_to_role">Рөлдерді таңдауға қайту</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. STUDENT DASHBOARD VIEW -->
+            <div id="view-dashboard" class="view-section hidden space-y-6">
+                <!-- Welcome Banner -->
+                <div
+                    class="bg-gradient-to-r from-brand-700 to-brand-500 text-white rounded-2xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold" id="greeting-text">Сәлем, Бекарыс! 👋</h1>
+                        <p class="text-red-100 text-sm mt-1" data-i18n="greeting_sub">Практикаңызға сәттілік тілейміз!
+                            Журналды күнделікті толтыруды уақытылы орындаңыз.</p>
+                    </div>
+                    <div
+                        class="mt-4 md:mt-0 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-medium flex items-center space-x-2">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span>Практика мерзімі: <b>01.09.2026 — 30.09.2026</b></span>
+                    </div>
+                </div>
+
+                <!-- Automatic Warning Banner -->
+                <div id="auto-warning-banner"
+                    class="hidden p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between text-amber-800 dark:text-amber-300 text-sm">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl"></i>
+                        <span id="auto-warning-text">⚠ Бүгінгі практика журналын толтыруды ұмытпаңыз!</span>
+                    </div>
+                    <button onclick="navigateTo('journal')"
+                        class="px-3 py-1 bg-amber-500 text-white font-medium rounded-lg text-xs hover:bg-amber-600 transition">Толтыру</button>
+                </div>
+
+                <!-- Stat Cards Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_filled">Толтырылды
+                        </div>
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="stat-filled-count">0/30
+                        </div>
+                        <div class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-check"></i> Күндер
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_remaining">Қалды
+                        </div>
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="stat-remaining-count">30
+                            күн</div>
+                        <div class="text-xs text-gray-400 font-medium mt-1"><i class="fa-regular fa-clock"></i> Күн саны
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_verified">Расталды
+                        </div>
+                        <div class="text-2xl font-extrabold text-emerald-600" id="stat-verified-count">0</div>
+                        <div class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-shield-check"></i>
+                            Куратор тексерді</div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_unverified">
+                            Расталмаған</div>
+                        <div class="text-2xl font-extrabold text-amber-500" id="stat-unverified-count">0</div>
+                        <div class="text-xs text-amber-500 font-medium mt-1"><i class="fa-solid fa-hourglass-half"></i>
+                            Тексерілуде</div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_avg_grade">Орташа
+                            баға</div>
+                        <div class="text-2xl font-extrabold text-brand-600" id="stat-avg-grade">0.0</div>
+                        <div class="text-xs text-yellow-500 font-medium mt-1"><i class="fa-solid fa-star"></i> Көрсеткіш
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1" data-i18n="stat_progress">Жалпы
+                            прогресс</div>
+                        <div class="text-2xl font-extrabold text-indigo-600" id="stat-progress-pct">0%</div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="stat-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Quick Action -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Today Quick Entry Card -->
+                    <div
+                        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-white" data-i18n="today_status">Бүгінгі
+                                практика статусы</h3>
+                            <span id="today-status-badge"
+                                class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Толтыру
+                                қажет</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Бүгін атқарылған жұмыс пен үйренген
+                            дағдыларды журналға тіркеңіз.</p>
+                        <button onclick="navigateTo('journal')"
+                            class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl shadow transition text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span data-i18n="fill_today">Бүгінгі күнді толтыру</span>
+                        </button>
+                    </div>
+
+                    <!-- Final Summary Preview -->
+                    <div
+                        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-3" data-i18n="final_report_title">
+                            Автоматты қорытынды есеп</h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span class="text-gray-500">Практика орны:</span>
+                                <span class="font-semibold" id="dash-company-name">KazOilTrans</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span class="text-gray-500">Практика жетекшісі:</span>
+                                <span class="font-semibold" id="dash-supervisor-name">Айдос Н.</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span class="text-gray-500">Куратор:</span>
+                                <span class="font-semibold" id="dash-curator-name">Ерланова А.</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span class="text-gray-500">Қатысу көрсеткіші:</span>
+                                <span class="font-semibold text-emerald-600" id="dash-attendance-pct">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. CURATOR DASHBOARD VIEW -->
+            <div id="view-curator-dashboard" class="view-section hidden space-y-6">
+                <!-- Curator Banner -->
+                <div
+                    class="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold">Куратор Панелі 👨‍🏫</h1>
+                        <p class="text-gray-300 text-sm mt-1">Топ студенттерінің практикасын бақылау, пікір қалдыру және
+                            бағалау.</p>
+                    </div>
+
+                    <!-- Group Selector -->
+                    <div class="mt-4 md:mt-0 flex items-center space-x-2">
+                        <label class="text-xs text-gray-300 font-medium">Топты таңдау:</label>
+                        <select id="curator-group-select" onchange="renderCuratorStudentList()"
+                            class="px-3 py-1.5 rounded-lg bg-gray-700 text-white text-sm border border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="301 РПО">301 РПО (22 студент)</option>
+                            <option value="202 ИС">202 ИС (20 студент)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Curator Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Барлық студент</div>
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="curator-stat-total">0
+                        </div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Практикада</div>
+                        <div class="text-2xl font-extrabold text-emerald-600" id="curator-stat-active">0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Келмеген/Толтырмаған</div>
+                        <div class="text-2xl font-extrabold text-red-600" id="curator-stat-inactive">0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Толық журнал</div>
+                        <div class="text-2xl font-extrabold text-blue-600" id="curator-stat-full">0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Тексерілмеген күн</div>
+                        <div class="text-2xl font-extrabold text-amber-500" id="curator-stat-pending">0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Орташа баға</div>
+                        <div class="text-2xl font-extrabold text-brand-600" id="curator-stat-avg">0.0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-xs text-gray-500">Бүгін белсенді</div>
+                        <div class="text-2xl font-extrabold text-indigo-600" id="curator-stat-today">0</div>
+                    </div>
+                </div>
+
+                <!-- Filters & Search Bar -->
+                <div
+                    class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <input type="text" id="curator-filter-search" oninput="renderCuratorStudentList()"
+                            placeholder="Аты-жөні бойынша іздеу..."
+                            class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-60">
+
+                        <select id="curator-filter-status" onchange="renderCuratorStudentList()"
+                            class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none">
+                            <option value="all">Барлық статустар</option>
+                            <option value="pending">Тексеруді күтуде</option>
+                            <option value="low">Бағасы 3.5-тен төмен</option>
+                            <option value="full">100% толтырғандар</option>
+                        </select>
+                    </div>
+
+                    <div class="text-xs text-gray-500">
+                        Тізімде: <span id="curator-showing-count" class="font-bold">0</span> студент
+                    </div>
+                </div>
+
+                <!-- Student List Table -->
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3">№</th>
+                                    <th class="px-4 py-3">Студент</th>
+                                    <th class="px-4 py-3">Мамандығы</th>
+                                    <th class="px-4 py-3">Практика орны</th>
+                                    <th class="px-4 py-3 text-center">Прогресс</th>
+                                    <th class="px-4 py-3 text-center">Орташа баға</th>
+                                    <th class="px-4 py-3 text-center">Әрекет</th>
+                                </tr>
+                            </thead>
+                            <tbody id="curator-students-tbody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Leaderboard / Ranking Section -->
+                <div
+                    class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">🏆 Үздік Студенттер Рейтингі</h3>
+                    <div id="curator-leaderboard-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- JS populated leaderboard -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. JOURNAL VIEW (Shared view rendered according to role) -->
+            <div id="view-journal" class="view-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="journal_title">Практика
+                            Журналы</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400" id="journal-subtitle">Күнделікті атқарылған
+                            жұмыстар тізімі (01.09.2026 - 30.09.2026)</p>
+                    </div>
+
+                    <!-- Curator viewing student header indicator -->
+                    <div id="curator-viewing-student-info"
+                        class="hidden bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 text-xs text-red-700 dark:text-red-300 flex items-center space-x-3">
+                        <i class="fa-solid fa-user-pen text-lg"></i>
+                        <div>
+                            <span class="font-bold block" id="curator-target-student-name">Студент: Елубаев
+                                Бегарыс</span>
+                            <span id="curator-target-student-group">Тобы: 301 РПО</span>
+                        </div>
+                        <button onclick="switchCuratorView('curator-dashboard')"
+                            class="ml-2 text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Артқа</button>
+                    </div>
+                </div>
+
+                <!-- Journal Entries Table / Mobile Cards -->
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm min-w-[800px]">
+                            <thead
+                                class="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3 w-28">Күн</th>
+                                    <th class="px-4 py-3">Не істедім? / Жұмыс сипаттамасы</th>
+                                    <th class="px-4 py-3 w-32">Дәлел (Фото/Видео)</th>
+                                    <th class="px-4 py-3 w-48">Куратор пікірі</th>
+                                    <th class="px-4 py-3 w-20 text-center">Баға</th>
+                                    <th class="px-4 py-3 w-28 text-center">Статус</th>
+                                    <th class="px-4 py-3 w-24 text-center">Әрекет</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journal-tbody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. CALENDAR VIEW -->
+            <div id="view-calendar" class="view-section hidden space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="calendar_title">Практика
+                        Күнтізбесі</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Күндердің толықтырылу статусын күнтізбе арқылы
+                        бақылаңыз</p>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex flex-wrap items-center gap-4 text-xs font-medium">
+                    <div class="flex items-center space-x-1.5"><span
+                            class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span><span>🟢 Расталды</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5"><span
+                            class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span><span>🟡 Тексерілуде</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5"><span
+                            class="w-3 h-3 rounded-full bg-red-500 inline-block"></span><span>🔴 Толтырылмаған</span>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid Container -->
+                <div
+                    class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="text-center font-bold text-lg mb-4 text-gray-800 dark:text-gray-200">Қыркүйек 2026 жыл
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-gray-400 mb-2">
+                        <div>Дс</div>
+                        <div>Сс</div>
+                        <div>Ср</div>
+                        <div>Бс</div>
+                        <div>Жм</div>
+                        <div>Сн</div>
+                        <div>Жс</div>
+                    </div>
+
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+                        <!-- JS populated calendar days -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. TASKS VIEW -->
+            <div id="view-tasks" class="view-section hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="tasks_title">Тапсырмалар
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Куратор тарапынан берілген тапсырмалар мен
+                            дедлайндар</p>
+                    </div>
+
+                    <button id="add-task-btn" onclick="openCreateTaskModal()"
+                        class="hidden px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Жаңа тапсырма</span>
+                    </button>
+                </div>
+
+                <div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- JS Populated -->
+                </div>
+            </div>
+
+            <!-- 10. GRADES VIEW -->
+            <div id="view-grades" class="view-section hidden space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="grades_title">Бағалар &
+                        Аналитика</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Практика барысында қойылған барлық бағалардың
+                        есебі</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-sm text-gray-500 mb-1">Жалпы орташа баға</div>
+                        <div class="text-5xl font-extrabold text-brand-600 my-2" id="grades-avg-score">0.0</div>
+                        <div class="text-xs text-gray-400">5 балдық шкала бойынша</div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-sm text-gray-500 mb-1">Ең жоғары баға</div>
+                        <div class="text-5xl font-extrabold text-emerald-600 my-2" id="grades-max-score">0</div>
+                        <div class="text-xs text-emerald-600"><i class="fa-solid fa-trophy"></i> Үздік көрсеткіш</div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <div class="text-sm text-gray-500 mb-1">Бағаланған күндер</div>
+                        <div class="text-5xl font-extrabold text-indigo-600 my-2" id="grades-count">0</div>
+                        <div class="text-xs text-gray-400">30 күннің ішінде</div>
+                    </div>
+                </div>
+
+                <!-- Daily Breakdown list -->
+                <div
+                    class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4">Күндер бойынша бағалар</h3>
+                    <div id="grades-breakdown-list" class="space-y-2">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. DOCUMENTS VIEW -->
+            <div id="view-documents" class="view-section hidden space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="docs_title">Құжаттар базасы
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Практикаға қатысты ресми құжаттар мен жолдамалар
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4">
+                        <div class="text-3xl text-red-500"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm">Практика күнделігі (Шаблон)</h4>
+                            <p class="text-xs text-gray-400 mt-0.5">PDF • 1.2 MB</p>
+                            <button onclick="downloadDoc('Практика_күнделігі.pdf')"
+                                class="mt-3 text-xs text-brand-600 font-semibold hover:underline flex items-center space-x-1">
+                                <i class="fa-solid fa-download"></i> <span>Жүктеп алу</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4">
+                        <div class="text-3xl text-blue-500"><i class="fa-solid fa-file-word"></i></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm">Практика есебі (Үлгі)</h4>
+                            <p class="text-xs text-gray-400 mt-0.5">DOCX • 850 KB</p>
+                            <button onclick="downloadDoc('Практика_есебі.docx')"
+                                class="mt-3 text-xs text-brand-600 font-semibold hover:underline flex items-center space-x-1">
+                                <i class="fa-solid fa-download"></i> <span>Жүктеп алу</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-start space-x-4">
+                        <div class="text-3xl text-emerald-500"><i class="fa-solid fa-file-contract"></i></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm">Жолдама & Келісімшарт</h4>
+                            <p class="text-xs text-gray-400 mt-0.5">PDF • 2.1 MB</p>
+                            <button onclick="downloadDoc('Жолдама.pdf')"
+                                class="mt-3 text-xs text-brand-600 font-semibold hover:underline flex items-center space-x-1">
+                                <i class="fa-solid fa-download"></i> <span>Жүктеп алу</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. GALLERY VIEW -->
+            <div id="view-gallery" class="view-section hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="gallery_title">Фото /
+                            Видео Фотогалерея</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Барлық күнделікті тіркелген фото және видео
+                            дәлелдер</p>
+                    </div>
+
+                    <!-- Filter buttons -->
+                    <div class="flex space-x-2">
+                        <button onclick="filterGallery('all')"
+                            class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-medium">Барлығы</button>
+                        <button onclick="filterGallery('photo')"
+                            class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-medium">Тек
+                            Фото</button>
+                        <button onclick="filterGallery('video')"
+                            class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-medium">Тек
+                            Видео</button>
+                    </div>
+                </div>
+
+                <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- JS populated media grid -->
+                </div>
+            </div>
+
+            <!-- 13. NOTIFICATIONS VIEW -->
+            <div id="view-notifications" class="view-section hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="notif_title">
+                            Хабарламалар</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Жүйелік және куратор ескертулері</p>
+                    </div>
+                    <button onclick="markAllNotificationsRead()"
+                        class="text-xs text-brand-600 font-semibold hover:underline">Барлығын оқылды деп
+                        белгілеу</button>
+                </div>
+
+                <div id="notifications-list" class="space-y-3">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <!-- 14. PROFILE VIEW -->
+            <div id="view-profile" class="view-section hidden space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="profile_title">Пайдаланушы
+                        Профилі</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Жеке мәліметтер және аккаунт баптаулары</p>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm max-w-2xl">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-16 h-16 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-2xl"
+                            id="profile-avatar-large">
+                            ЕБ
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold" id="profile-full-name">Елубаев Бегарыс</h3>
+                            <p class="text-sm text-gray-500" id="profile-role-text">Студент • 301 РПО</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
+                        <div>
+                            <span class="text-xs text-gray-400 block uppercase font-semibold">ЖСН:</span>
+                            <span class="font-medium" id="profile-iin">123456789012</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 block uppercase font-semibold">Мамандығы:</span>
+                            <span class="font-medium" id="profile-spec">Бағдарламалық қамтамасыз ету</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 block uppercase font-semibold">Практика Орны:</span>
+                            <span class="font-medium" id="profile-company">KazOilTrans</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 block uppercase font-semibold">Куратор:</span>
+                            <span class="font-medium" id="profile-curator">Ерланова А.</span>
+                        </div>
+                    </div>
+
+                    <!-- Password Change Form -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h4 class="font-bold text-sm mb-3">Парольді өзгерту</h4>
+                        <form onsubmit="handleChangePassword(event)" class="space-y-3 max-w-sm">
+                            <input type="password" id="new-password-input" placeholder="Жаңа пароль"
+                                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <button type="submit"
+                                class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-700 transition">Сақтау</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODALS CONTAINER -->
+    <!-- Modal: Daily Journal Entry & Review -->
+    <div id="modal-journal-entry"
+        class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-200 dark:border-gray-700 fade-in">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white" id="modal-entry-date-title">Журнал жазбасы —
+                    01.09.2026</h3>
+                <button onclick="closeModal('modal-journal-entry')"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Content Form -->
+            <form id="journal-entry-form" onsubmit="saveJournalEntry(event)" class="space-y-4">
+                <input type="hidden" id="entry-date-hidden">
+
+                <!-- Student Inputs Area -->
+                <div id="student-form-fields" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Бүгін не істедім?
+                            (Атқарылған жұмыс)</label>
+                        <textarea id="entry-work-done" rows="3"
+                            placeholder="Практика барысында орындаған жұмысыңызды толық жазыңыз..."
+                            class="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Не үйрендім?</label>
+                            <input type="text" id="entry-learned" placeholder="Жаңа дағды, құрал..."
+                                class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Орындалған
+                                тапсырма</label>
+                            <input type="text" id="entry-task" placeholder="Жетекші тапсырмасы..."
+                                class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Студент пікірі</label>
+                        <textarea id="entry-student-comment" rows="2"
+                            placeholder="Практика жетекшісімен қандай жұмыс жасалды? Пікіріңіз..."
+                            class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- Photo / Video Attachment -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">📸 Фото / Видео Дәлел Тіркеу
+                            (Міндетті)</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="file" id="entry-file-input" accept="image/*,video/*"
+                                onchange="handleFileUpload(event)"
+                                class="text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                        </div>
+                        <div id="media-preview-container" class="mt-3 flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <!-- Curator Review Block (Only active/visible for Curator or displayed read-only for student) -->
+                <div id="curator-review-block"
+                    class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-3">
+                    <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-user-check text-brand-600"></i>
+                        <span>Куратор Тексерісі & Бағалау</span>
+                    </h4>
+
+                    <!-- Quick Curator Template Suggestions -->
+                    <div id="curator-quick-comments" class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCuratorTemplate('Өте жақсы, осылай жалғастыр!')"
+                            class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-xs rounded">👍 Өте
+                            жақсы</button>
+                        <button type="button" onclick="setCuratorTemplate('Жақсы орындалған, бірақ есепті толықтыр.')"
+                            class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-xs rounded">👌
+                            Жақсы</button>
+                        <button type="button" onclick="setCuratorTemplate('Тапсырма сапалы орындалды.')"
+                            class="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-xs rounded">⭐
+                            Жарайсың</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Куратор пікірі
+                            (Міндетті):</label>
+                        <textarea id="entry-curator-comment" oninput="validateCuratorGrading()" rows="2"
+                            placeholder="Студент жұмысына пікір қалдырыңыз..."
+                            class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- Mandatory Grade Rule Notice -->
+                    <div id="grade-lock-notice" class="text-xs text-amber-600 font-medium flex items-center space-x-1">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Алдымен студентке пікір қалдырыңыз. Пікірсіз баға қою мүмкін емес!</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Баға қою (1-5):</label>
+                        <select id="entry-grade-select" disabled
+                            class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
+                            <option value="0">Баға таңдалмаған</option>
+                            <option value="5">5 — Өте жақсы</option>
+                            <option value="4">4 — Жақсы</option>
+                            <option value="3">3 — Қанағаттанарлық</option>
+                            <option value="2">2 — Нашар</option>
+                            <option value="1">1 — Өте нашар</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button type="button" onclick="closeModal('modal-journal-entry')"
+                        class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-100">Болдырмау</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow">Сақтау</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Image Preview Lightbox -->
+    <div id="modal-media-preview" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden"
+        onclick="closeModal('modal-media-preview')">
+        <div class="relative max-w-3xl w-full flex justify-center items-center" onclick="event.stopPropagation()">
+            <button onclick="closeModal('modal-media-preview')" class="absolute -top-10 right-0 text-white text-2xl"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div id="media-lightbox-content" class="w-full flex justify-center"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Logout Confirmation -->
+    <div id="modal-logout"
+        class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-200 dark:border-gray-700 fade-in">
+            <div
+                class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xl mx-auto mb-4">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Жүйеден шығу</h3>
+            <p class="text-xs text-gray-500 mb-6">Жүйеден шығуға сенімдісіз бе?</p>
+            <div class="flex justify-center space-x-3">
+                <button onclick="closeModal('modal-logout')"
+                    class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium">Болдырмау</button>
+                <button onclick="performLogout()"
+                    class="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700">Шығу</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Create Task (Curator) -->
+    <div id="modal-create-task"
+        class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 fade-in">
+            <h3 class="font-bold text-lg mb-4">Жаңа Тапсырма Беру</h3>
+            <form onsubmit="handleCreateTask(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Тапсырма Атауы</label>
+                    <input type="text" id="task-title-input" required placeholder="Мыс: Практика есебін тапсыру..."
+                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Сипаттамасы</label>
+                    <textarea id="task-desc-input" rows="3" required placeholder="Тапсырманың қысқаша мазмұны..."
+                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Дедлайн Күні</label>
+                    <input type="date" id="task-deadline-input" required
+                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="closeModal('modal-create-task')"
+                        class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg">Болдырмау</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-brand-600 text-white text-xs font-semibold rounded-lg">Беру</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // ==========================================
+        // 1. MOCK DATA & STATE MANAGEMENT
+        // ==========================================
+
+        // Student Database lists for groups 301 РПО and 202 ИС
+        const MOCK_STUDENTS_301_RPO = [
+            "Аманбаев Ернур", "Ахмадинова Мерей", "Дарханов Шынтыс", "Досанова Аянат",
+            "Елубаев Бегарыс", "Жаксылькова Жанерке", "Жубаныш Раушан", "Кебейсін Анель",
+            "Марат Әбдірахман", "Мергенбай Мержан", "Микишев Артур", "Нагашыбаев Асылжан",
+            "Нуржанов Максат", "Сапарова Коркем", "Сактаган Гулерке", "Султанова Камила",
+            "Турсынбаева Гульназ", "Тугелбаев Нурали", "Хасанов Бек", "Конакбаев Ислам",
+            "Куаныш Аяна", "Әбдешова Дана"
+        ];
+
+        const MOCK_STUDENTS_202_IS = [
+            "Абдрахманова Джастина", "Аекешова Зухра", "Амангалиев Арман", "Балтурин Расул",
+            "Жұбандық Гүлнұр", "Истаев Нұрсұлтан", "Кинько Вячеслав", "Куракбаева Зарина",
+            "Метельский Данил", "Нагметов Қайрат", "Нажмадин Инабат", "Разахов Ардақ",
+            "Сагижан Жансая", "Сағындықова Қарлығаш", "Ситкали Әділет", "Ұлықпан Нұрмұхан",
+            "Урашев Ерлан", "Ұрынбасарова Русалина", "Чернова Алеся", "Абдулова Наргиза"
+        ];
+
+        function getStudentIin(group, index) {
+            if (group === '301 РПО' && index === 4) return '123456789012';
+            const groupCode = group === '301 РПО' ? '301' : '202';
+            return `${groupCode}0000${String(index + 1).padStart(5, '0')}`;
+        }
+
+        window.practiceSeedStudents = [
+            ...MOCK_STUDENTS_301_RPO.map((name, index) => ({
+                iin: getStudentIin('301 РПО', index), name, group: '301 РПО', role: 'student'
+            })),
+            ...MOCK_STUDENTS_202_IS.map((name, index) => ({
+                iin: getStudentIin('202 ИС', index), name, group: '202 ИС', role: 'student'
+            }))
+        ];
+
+        // Global State
+        let currentUser = null; // { role: 'student'|'curator', iin: string, name: string, group: string, ... }
+        let currentRole = null;
+        let selectedStudentForCurator = null; // When curator reviews a specific student
+        let activeLanguage = 'kk';
+        let currentTempFiles = []; // Temporary attached media for journal modal
+
+        // Multilingual Dictionary
+        const TRANSLATIONS = {
+            kk: {
+                enter_system: "Жүйеге кіру",
+                select_role: "Жүйедегі рөліңізді таңдаңыз",
+                select_role_desc: "Кіру режимін таңдап, жұмысты бастаңыз",
+                role_student: "Студент ретінде кіру",
+                role_student_desc: "Күнделікті есеп толтыру, фото/видео тіркеу, баға мен тапсырмаларды бақылау.",
+                role_curator: "Куратор ретінде кіру",
+                role_curator_desc: "Топ студенттерін тексеру, пікір қалдыру, баға қою және статистиканы көру.",
+                back: "Артқа оралу",
+                student_auth: "Студент кабинетіне кіру",
+                curator_auth: "Куратор кабинетіне кіру",
+                iin: "ЖСН (12 цифр)",
+                password: "Пароль",
+                login_btn: "Кіру",
+                logout: "Шығу",
+                journal_title: "Практика Журналы",
+                calendar_title: "Практика Күнтізбесі",
+                tasks_title: "Тапсырмалар",
+                grades_title: "Бағалар & Аналитика",
+                docs_title: "Құжаттар базасы",
+                gallery_title: "Фото / Видео Галерея",
+                notif_title: "Хабарламалар",
+                profile_title: "Пайдаланушы Профилі",
+                export_report: "Есепті сақтау / Print"
+            },
+            ru: {
+                enter_system: "Войти в систему",
+                select_role: "Выберите вашу роль",
+                select_role_desc: "Выберите режим входа для начала работы",
+                role_student: "Войти как Студент",
+                role_student_desc: "Заполнение отчетов, загрузка фото/видео, просмотр оценок и заданий.",
+                role_curator: "Войти как Куратор",
+                role_curator_desc: "Проверка студентов, оставление отзывов, выставление оценок и статистика.",
+                back: "Назад",
+                student_auth: "Вход для студента",
+                curator_auth: "Вход для куратора",
+                iin: "ИИН (12 цифр)",
+                password: "Пароль",
+                login_btn: "Войти",
+                logout: "Выйти",
+                journal_title: "Журнал практики",
+                calendar_title: "Календарь практики",
+                tasks_title: "Задания",
+                grades_title: "Оценки и Аналитика",
+                docs_title: "База документов",
+                gallery_title: "Фото / Видео Галерея",
+                notif_title: "Уведомления",
+                profile_title: "Профиль пользователя",
+                export_report: "Экспорт / Печать"
+            }
+        };
+
+        // Initialize LocalStorage Data if not present
+        function initStorage() {
+            if (!localStorage.getItem('pr_journals')) {
+                // Generate default mock journal entries
+                const initialJournals = {};
+
+                // Helper to create initial data for a student
+                const createStudentJournals = (iin) => {
+                    const entries = {};
+                    for (let day = 1; day <= 30; day++) {
+                        const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                        if (day <= 3) { // Pre-filled demo days
+                            entries[dateStr] = {
+                                workDone: `Практика орнындағы бағдарламалық жүйелермен танысу және ${day}-күндік тапсырмаларды орындау.`,
+                                learned: "Негізгі модулдердің архитектурасы",
+                                taskDone: "Кодты рефакторинг жасау",
+                                studentComment: "Бүгін практика жетекшісімен бірге базалық құрылымды зерттедік.",
+                                media: [{ type: 'photo', url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400', name: 'demo_photo.jpg' }],
+                                curatorComment: day === 1 ? "Өте жақсы, осылай жалғастыр!" : "",
+                                grade: day === 1 ? 5 : 0,
+                                status: day === 1 ? 'approved' : 'pending'
+                            };
+                        } else {
+                            entries[dateStr] = {
+                                workDone: "", learned: "", taskDone: "", studentComment: "",
+                                media: [], curatorComment: "", grade: 0, status: 'empty'
+                            };
+                        }
+                    }
+                    return entries;
+                };
+
+                // Create entries for Begarys Elubayev
+                initialJournals['123456789012'] = createStudentJournals('123456789012');
+                localStorage.setItem('pr_journals', JSON.stringify(initialJournals));
+            }
+
+            if (!localStorage.getItem('pr_tasks')) {
+                const defaultTasks = [
+                    {
+                        id: 1,
+                        title: "Практиканың 1-апталық есебін дайындау",
+                        description: "Атқарылған жұмыстар тізімін және жиналған материалдарды реттеп, кураторға жіберу.",
+                        deadline: "2026-09-10",
+                        status: "Орындалуда",
+                        group: "301 РПО"
+                    },
+                    {
+                        id: 2,
+                        title: "Қауіпсіздік техникасы нұсқаулығынан өту",
+                        description: "Мекемедегі еңбекті қорғау ережелерімен танысып, растау қағазын жүктеу.",
+                        deadline: "2026-09-05",
+                        status: "Орындалды",
+                        group: "301 РПО"
+                    }
+                ];
+                localStorage.setItem('pr_tasks', JSON.stringify(defaultTasks));
+            }
+
+            if (!localStorage.getItem('pr_notifications')) {
+                const defaultNotifs = [
+                    { id: 1, text: "Куратор Ерланова А. 01.09.2026 күнгі жазбаңызды тексерді және 5 деген баға қойды.", date: "02.09.2026", read: false },
+                    { id: 2, text: "Жаңа тапсырма қосылды: 'Практиканың 1-апталық есебін дайындау'", date: "01.09.2026", read: false }
+                ];
+                localStorage.setItem('pr_notifications', JSON.stringify(defaultNotifs));
+            }
+        }
+
+        // ==========================================
+        // 2. INITIALIZATION & NAVIGATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initStorage();
+            checkSavedSession();
+            updateLanguageUI();
+        });
+
+        function checkSavedSession() {
+            const savedUser = JSON.parse(localStorage.getItem('pr_session') || 'null');
+            if (savedUser) {
+                currentUser = savedUser;
+                currentRole = savedUser.role;
+                setupUIForRole();
+            } else {
+                showScreen('screen-welcome');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('section, .view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('top-navbar').classList.add('hidden');
+            document.getElementById('sidebar').classList.add('hidden');
+
+            const target = document.getElementById(screenId);
+            if (target) target.classList.remove('hidden');
+        }
+
+        function selectRole(role) {
+            currentRole = role;
+            if (role === 'student') {
+                showScreen('screen-student-login');
+            } else {
+                showScreen('screen-curator-login');
+            }
+        }
+
+        function setupUIForRole() {
+            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('top-navbar').classList.remove('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+
+            // Render Role Badge and Profile info
+            const badge = document.getElementById('role-badge');
+            const searchWrapper = document.getElementById('curator-search-wrapper');
+
+            if (currentRole === 'student') {
+                badge.innerText = "Студент";
+                badge.className = "ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-brand-700 font-semibold dark:bg-red-900/40 dark:text-red-300";
+                searchWrapper.classList.add('hidden');
+                document.getElementById('add-task-btn').classList.add('hidden');
+            } else {
+                badge.innerText = "Куратор";
+                badge.className = "ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold dark:bg-blue-900/40 dark:text-blue-300";
+                searchWrapper.classList.remove('hidden');
+                document.getElementById('add-task-btn').classList.remove('hidden');
+            }
+
+            document.getElementById('user-display-name').innerText = currentUser.name || "Қолданушы";
+            document.getElementById('user-sub-info').innerText = currentUser.group || "Куратор";
+            document.getElementById('user-avatar-initials').innerText = getInitials(currentUser.name || "U");
+
+            renderSidebarNav();
+
+            if (currentRole === 'student') {
+                navigateTo('dashboard');
+            } else {
+                navigateTo('curator-dashboard');
+            }
+        }
+
+        function renderSidebarNav() {
+            const container = document.getElementById('nav-items-container');
+            let navItems = [];
+
+            if (currentRole === 'student') {
+                navItems = [
+                    { id: 'dashboard', icon: 'fa-house', label: 'Басты бет' },
+                    { id: 'journal', icon: 'fa-book-open', label: 'Практика журналы' },
+                    { id: 'calendar', icon: 'fa-calendar-days', label: 'Күнтізбе' },
+                    { id: 'tasks', icon: 'fa-list-check', label: 'Тапсырмалар' },
+                    { id: 'grades', icon: 'fa-chart-line', label: 'Бағалар' },
+                    { id: 'documents', icon: 'fa-folder-closed', label: 'Құжаттар' },
+                    { id: 'gallery', icon: 'fa-images', label: 'Фото / Видео' },
+                    { id: 'notifications', icon: 'fa-bell', label: 'Хабарламалар' },
+                    { id: 'profile', icon: 'fa-user', label: 'Профиль' }
+                ];
+            } else { // Curator
+                navItems = [
+                    { id: 'curator-dashboard', icon: 'fa-chart-pie', label: 'Бақылау панелі' },
+                    { id: 'tasks', icon: 'fa-list-check', label: 'Тапсырмалар беру' },
+                    { id: 'documents', icon: 'fa-folder-closed', label: 'Құжаттар' },
+                    { id: 'notifications', icon: 'fa-bell', label: 'Хабарламалар' },
+                    { id: 'profile', icon: 'fa-user', label: 'Профиль' }
+                ];
+            }
+
+            container.innerHTML = navItems.map(item => `
+                <button onclick="navigateTo('${item.id}')" id="nav-btn-${item.id}" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fa-solid ${item.icon} w-5 text-center text-gray-400"></i>
+                    <span>${item.label}</span>
+                </button>
+            `).join('');
+        }
+
+        function navigateTo(viewId) {
+            // Hide all view sections
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+
+            // Deactivate all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-brand-900/30', 'dark:text-red-400', 'font-semibold');
+            });
+
+            const activeBtn = document.getElementById(`nav-btn-${viewId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-brand-900/30', 'dark:text-red-400', 'font-semibold');
+            }
+
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                targetView.classList.add('fade-in');
+            }
+
+            // Execute view refresh logic
+            if (viewId === 'dashboard') loadStudentDashboard();
+            if (viewId === 'curator-dashboard') renderCuratorDashboard();
+            if (viewId === 'journal') renderJournalTable();
+            if (viewId === 'calendar') renderCalendar();
+            if (viewId === 'tasks') renderTasks();
+            if (viewId === 'grades') renderGradesView();
+            if (viewId === 'gallery') renderGallery();
+            if (viewId === 'notifications') renderNotifications();
+            if (viewId === 'profile') loadProfileView();
+
+            // Mobile sidebar auto close
+            toggleSidebar(false);
+        }
+
+        // ==========================================
+        // 3. AUTHENTICATION LOGIC
+        // ==========================================
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            const iin = document.getElementById('student-iin').value.trim();
+            const password = document.getElementById('student-password').value.trim();
+            const errDiv = document.getElementById('student-login-error');
+
+            errDiv.classList.add('hidden');
+
+            if (!iin || !password) {
+                errDiv.innerText = "✕ Барлық өрістерді толтырыңыз!";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!/^\d{12}$/.test(iin)) {
+                errDiv.innerText = "✕ ЖСН дәл 12 цифрдан тұруы керек!";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            const student = (window.practiceSeedStudents || []).find(item => item.iin === iin);
+            const expectedPassword = iin.slice(-4);
+
+            if (!student || password !== expectedPassword) {
+                errDiv.innerText = "✕ ИИН немесе пароль қате! Пароль — ИИН-нің соңғы 4 цифры.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = {
+                role: 'student',
+                iin: iin,
+                name: student.name,
+                group: student.group,
+                specialty: "Бағдарламалық қамтамасыз ету",
+                company: "KazOilTrans",
+                curator: "Ерланова А.",
+                supervisor: "Айдос Н."
+            };
+
+            localStorage.setItem('pr_session', JSON.stringify(currentUser));
+            showToast("Сәтті кірдіңіз!", "success");
+            setupUIForRole();
+        }
+
+        function handleCuratorLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('curator-username').value.trim();
+            const pass = document.getElementById('curator-password').value.trim();
+            const errDiv = document.getElementById('curator-login-error');
+
+            errDiv.classList.add('hidden');
+
+            if (user === 'curator01' && pass === 'curator123') {
+                currentUser = {
+                    role: 'curator',
+                    username: 'curator01',
+                    name: 'Ерланова А.',
+                    group: 'Куратор (301 РПО, 202 ИС)'
+                };
+
+                localStorage.setItem('pr_session', JSON.stringify(currentUser));
+                showToast("Куратор кабинетіне қош келдіңіз!", "success");
+                setupUIForRole();
+            } else {
+                errDiv.innerText = "✕ Логин немесе пароль қате! (Demo: curator01 / curator123)";
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        function confirmLogout() {
+            openModal('modal-logout');
+        }
+
+        function performLogout() {
+            localStorage.removeItem('pr_session');
+            currentUser = null;
+            currentRole = null;
+            closeModal('modal-logout');
+            showScreen('screen-welcome');
+            showToast("Жүйеден шықтыңыз", "info");
+        }
+
+        // ==========================================
+        // 4. STUDENT DASHBOARD LOGIC
+        // ==========================================
+        function loadStudentDashboard() {
+            if (!currentUser) return;
+
+            document.getElementById('greeting-text').innerText = `Сәлем, ${currentUser.name.split(' ')[1] || currentUser.name}! 👋`;
+
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[currentUser.iin] || {};
+
+            let filledCount = 0;
+            let verifiedCount = 0;
+            let unverifiedCount = 0;
+            let totalGrade = 0;
+            let gradedDaysCount = 0;
+
+            for (let day = 1; day <= 30; day++) {
+                const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                const entry = studentJournal[dateStr];
+                if (entry && (entry.workDone || entry.studentComment || entry.media.length > 0)) {
+                    filledCount++;
+                    if (entry.status === 'approved') verifiedCount++;
+                    if (entry.status === 'pending') unverifiedCount++;
+                    if (entry.grade > 0) {
+                        totalGrade += parseInt(entry.grade);
+                        gradedDaysCount++;
+                    }
+                }
+            }
+
+            const remaining = 30 - filledCount;
+            const progressPct = Math.round((filledCount / 30) * 100);
+            const avgGrade = gradedDaysCount > 0 ? (totalGrade / gradedDaysCount).toFixed(1) : "0.0";
+
+            document.getElementById('stat-filled-count').innerText = `${filledCount}/30`;
+            document.getElementById('stat-remaining-count').innerText = `${remaining} күн`;
+            document.getElementById('stat-verified-count').innerText = verifiedCount;
+            document.getElementById('stat-unverified-count').innerText = unverifiedCount;
+            document.getElementById('stat-avg-grade').innerText = avgGrade;
+            document.getElementById('stat-progress-pct').innerText = `${progressPct}%`;
+            document.getElementById('stat-progress-bar').style.width = `${progressPct}%`;
+            document.getElementById('dash-attendance-pct').innerText = `${progressPct}%`;
+
+            // Auto warning check for today
+            const todayStr = "01.09.2026"; // Mock today as 1st Sept for demo
+            const todayEntry = studentJournal[todayStr];
+            const warningBanner = document.getElementById('auto-warning-banner');
+
+            if (!todayEntry || !todayEntry.workDone) {
+                warningBanner.classList.remove('hidden');
+                document.getElementById('auto-warning-text').innerText = "⚠ Бүгінгі (01.09.2026) практика журналын толтыруды ұмытпаңыз!";
+                document.getElementById('today-status-badge').innerText = "Толтыру қажет";
+                document.getElementById('today-status-badge').className = "px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700";
+            } else if (todayEntry.media.length === 0) {
+                warningBanner.classList.remove('hidden');
+                document.getElementById('auto-warning-text').innerText = "⚠ Бүгінгі күнді растау үшін фото немесе видео дәлел қосыңыз!";
+                document.getElementById('today-status-badge').innerText = "Дәлел жеткіліксіз";
+                document.getElementById('today-status-badge').className = "px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700";
+            } else {
+                warningBanner.classList.add('hidden');
+                document.getElementById('today-status-badge').innerText = "Толтырылды";
+                document.getElementById('today-status-badge').className = "px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700";
+            }
+        }
+
+        // ==========================================
+        // 5. JOURNAL & MODAL LOGIC
+        // ==========================================
+        function renderJournalTable() {
+            const tbody = document.getElementById('journal-tbody');
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[targetIIN] || {};
+
+            // Setup curator header info if curator viewing
+            const curatorInfo = document.getElementById('curator-viewing-student-info');
+            if (currentRole === 'curator' && selectedStudentForCurator) {
+                curatorInfo.classList.remove('hidden');
+                document.getElementById('curator-target-student-name').innerText = `Студент: ${selectedStudentForCurator.name}`;
+                document.getElementById('curator-target-student-group').innerText = `Тобы: ${selectedStudentForCurator.group}`;
+            } else {
+                curatorInfo.classList.add('hidden');
+            }
+
+            let rowsHtml = '';
+            for (let day = 1; day <= 30; day++) {
+                const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                const entry = studentJournal[dateStr] || { workDone: '', learned: '', taskDone: '', studentComment: '', media: [], curatorComment: '', grade: 0, status: 'empty' };
+
+                let statusBadge = `<span class="px-2.5 py-1 text-xs rounded-full bg-gray-100 text-gray-600 font-medium dark:bg-gray-700 dark:text-gray-300">Бос</span>`;
+                if (entry.status === 'approved') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700 font-semibold dark:bg-emerald-900/40 dark:text-emerald-300">🟢 Расталды</span>`;
+                } else if (entry.status === 'pending') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs rounded-full bg-amber-100 text-amber-700 font-semibold dark:bg-amber-900/40 dark:text-amber-300">🟡 Тексерілуде</span>`;
+                }
+
+                const mediaPreview = entry.media.length > 0
+                    ? `<button onclick="viewMediaModal('${dateStr}')" class="text-xs text-brand-600 font-medium hover:underline flex items-center space-x-1"><i class="fa-solid fa-paperclip"></i><span>${entry.media.length} файл</span></button>`
+                    : `<span class="text-xs text-gray-400">Жоқ</span>`;
+
+                rowsHtml += `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                        <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">${dateStr}</td>
+                        <td class="px-4 py-3">
+                            <div class="line-clamp-2 text-xs text-gray-700 dark:text-gray-300">${entry.workDone || '<span class="text-gray-400 italic">Толтырылмаған</span>'}</div>
+                        </td>
+                        <td class="px-4 py-3">${mediaPreview}</td>
+                        <td class="px-4 py-3">
+                            <div class="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">${entry.curatorComment || '<span class="text-gray-400 italic">Пікір жоқ</span>'}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="font-bold ${entry.grade > 0 ? 'text-brand-600' : 'text-gray-400'}">${entry.grade > 0 ? entry.grade : '-'}</span>
+                        </td>
+                        <td class="px-4 py-3 text-center">${statusBadge}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="openJournalModal('${dateStr}')" class="px-3 py-1 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/30 dark:text-red-300 rounded-lg text-xs font-semibold transition">
+                                ${currentRole === 'curator' ? 'Тексеру' : 'Өңдеу'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            tbody.innerHTML = rowsHtml;
+        }
+
+        function openJournalModal(dateStr) {
+            document.getElementById('modal-entry-date-title').innerText = `Журнал жазбасы — ${dateStr}`;
+            document.getElementById('entry-date-hidden').value = dateStr;
+
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[targetIIN] || {};
+            const entry = studentJournal[dateStr] || { workDone: '', learned: '', taskDone: '', studentComment: '', media: [], curatorComment: '', grade: 0, status: 'empty' };
+
+            // Fill inputs
+            document.getElementById('entry-work-done').value = entry.workDone || '';
+            document.getElementById('entry-learned').value = entry.learned || '';
+            document.getElementById('entry-task').value = entry.taskDone || '';
+            document.getElementById('entry-student-comment').value = entry.studentComment || '';
+            document.getElementById('entry-curator-comment').value = entry.curatorComment || '';
+            document.getElementById('entry-grade-select').value = entry.grade || 0;
+
+            currentTempFiles = entry.media ? [...entry.media] : [];
+            renderMediaPreviews();
+
+            // Toggle element permissions based on role
+            const studentFields = document.getElementById('student-form-fields');
+            const curatorBlock = document.getElementById('curator-review-block');
+
+            if (currentRole === 'student') {
+                studentFields.querySelectorAll('input, textarea').forEach(el => el.disabled = false);
+                document.getElementById('entry-curator-comment').disabled = true;
+                document.getElementById('entry-grade-select').disabled = true;
+                document.getElementById('curator-quick-comments').classList.add('hidden');
+                document.getElementById('grade-lock-notice').classList.add('hidden');
+            } else { // Curator mode
+                studentFields.querySelectorAll('input, textarea').forEach(el => el.disabled = true);
+                document.getElementById('entry-curator-comment').disabled = false;
+                document.getElementById('curator-quick-comments').classList.remove('hidden');
+                validateCuratorGrading(); // Check if grade option should be enabled
+            }
+
+            openModal('modal-journal-entry');
+        }
+
+        // MANDATORY RULE: Curator must enter a comment before grade becomes active!
+        function validateCuratorGrading() {
+            if (currentRole !== 'curator') return;
+
+            const comment = document.getElementById('entry-curator-comment').value.trim();
+            const gradeSelect = document.getElementById('entry-grade-select');
+            const lockNotice = document.getElementById('grade-lock-notice');
+
+            if (comment.length > 0) {
+                gradeSelect.disabled = false;
+                lockNotice.classList.add('hidden');
+            } else {
+                gradeSelect.disabled = true;
+                gradeSelect.value = 0; // Reset grade
+                lockNotice.classList.remove('hidden');
+            }
+        }
+
+        function setCuratorTemplate(text) {
+            document.getElementById('entry-curator-comment').value = text;
+            validateCuratorGrading();
+        }
+
+        function handleFileUpload(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const isVideo = file.type.startsWith('video');
+                    currentTempFiles.push({
+                        type: isVideo ? 'video' : 'photo',
+                        url: event.target.result,
+                        name: file.name
+                    });
+                    renderMediaPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderMediaPreviews() {
+            const container = document.getElementById('media-preview-container');
+            container.innerHTML = currentTempFiles.map((m, idx) => `
+                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-300 group">
+                    ${m.type === 'photo'
+                    ? `<img src="${m.url}" class="w-full h-full object-cover">`
+                    : `<div class="w-full h-full bg-gray-800 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-video"></i></div>`
+                }
+                    <button type="button" onclick="removeTempMedia(${idx})" class="absolute top-0.5 right-0.5 bg-red-600 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center opacity-80 hover:opacity-100">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeTempMedia(index) {
+            currentTempFiles.splice(index, 1);
+            renderMediaPreviews();
+        }
+
+        function saveJournalEntry(e) {
+            e.preventDefault();
+            const dateStr = document.getElementById('entry-date-hidden').value;
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            if (!journals[targetIIN]) journals[targetIIN] = {};
+
+            const workDone = document.getElementById('entry-work-done').value.trim();
+            const learned = document.getElementById('entry-learned').value.trim();
+            const taskDone = document.getElementById('entry-task').value.trim();
+            const studentComment = document.getElementById('entry-student-comment').value.trim();
+            const curatorComment = document.getElementById('entry-curator-comment').value.trim();
+            const grade = parseInt(document.getElementById('entry-grade-select').value) || 0;
+
+            // Strict Validation for Student
+            if (currentRole === 'student') {
+                if (!workDone) {
+                    showToast("✕ 'Не істедім?' өрісін толтырыңыз!", "error");
+                    return;
+                }
+                if (currentTempFiles.length === 0) {
+                    showToast("⚠ Фото немесе видео дәлел қосыңыз!", "warning");
+                    return;
+                }
+            }
+
+            // Determine Status
+            let newStatus = 'pending';
+            if (currentRole === 'curator') {
+                if (curatorComment && grade > 0) newStatus = 'approved';
+            } else {
+                if (workDone && currentTempFiles.length > 0) newStatus = 'pending';
+                else newStatus = 'empty';
+            }
+
+            journals[targetIIN][dateStr] = {
+                workDone,
+                learned,
+                taskDone,
+                studentComment,
+                media: currentTempFiles,
+                curatorComment,
+                grade,
+                status: newStatus
+            };
+
+            localStorage.setItem('pr_journals', JSON.stringify(journals));
+            closeModal('modal-journal-entry');
+            showToast("✓ Жазба сәтті сақталды!", "success");
+
+            if (currentRole === 'student') loadStudentDashboard();
+            renderJournalTable();
+        }
+
+        function viewMediaModal(dateStr) {
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const entry = (journals[targetIIN] || {})[dateStr];
+
+            if (!entry || !entry.media || entry.media.length === 0) return;
+
+            const container = document.getElementById('media-lightbox-content');
+            container.innerHTML = entry.media.map(m => `
+                <div class="m-2 max-w-full">
+                    ${m.type === 'photo'
+                    ? `<img src="${m.url}" class="max-h-[80vh] rounded-xl shadow-lg">`
+                    : `<video src="${m.url}" controls class="max-h-[80vh] rounded-xl shadow-lg"></video>`
+                }
+                </div>
+            `).join('');
+
+            openModal('modal-media-preview');
+        }
+
+        // ==========================================
+        // 6. CURATOR DASHBOARD LOGIC
+        // ==========================================
+        function renderCuratorDashboard() {
+            const group = document.getElementById('curator-group-select').value;
+            const studentNames = group === '301 РПО' ? MOCK_STUDENTS_301_RPO : MOCK_STUDENTS_202_IS;
+
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+
+            let totalStudents = studentNames.length;
+            let activeCount = 0;
+            let inactiveCount = 0;
+            let fullJournalCount = 0;
+            let pendingReviewsCount = 0;
+            let totalGradeSum = 0;
+            let gradedStudentsCount = 0;
+
+            studentNames.forEach((name, index) => {
+                const mockIin = getStudentIin(group, index);
+                const studentJournal = journals[mockIin] || {};
+
+                let filledDays = 0;
+                let studentGradeSum = 0;
+                let studentGradeCount = 0;
+
+                for (let day = 1; day <= 30; day++) {
+                    const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                    const entry = studentJournal[dateStr];
+                    if (entry && entry.workDone) {
+                        filledDays++;
+                        if (entry.status === 'pending') pendingReviewsCount++;
+                        if (entry.grade > 0) {
+                            studentGradeSum += parseInt(entry.grade);
+                            studentGradeCount++;
+                        }
+                    }
+                }
+
+                if (filledDays > 0) activeCount++; else inactiveCount++;
+                if (filledDays === 30) fullJournalCount++;
+                if (studentGradeCount > 0) {
+                    totalGradeSum += (studentGradeSum / studentGradeCount);
+                    gradedStudentsCount++;
+                }
+            });
+
+            document.getElementById('curator-stat-total').innerText = totalStudents;
+            document.getElementById('curator-stat-active').innerText = activeCount;
+            document.getElementById('curator-stat-inactive').innerText = inactiveCount;
+            document.getElementById('curator-stat-full').innerText = fullJournalCount;
+            document.getElementById('curator-stat-pending').innerText = pendingReviewsCount;
+            document.getElementById('curator-stat-avg').innerText = gradedStudentsCount > 0 ? (totalGradeSum / gradedStudentsCount).toFixed(1) : "0.0";
+            document.getElementById('curator-stat-today').innerText = Math.round(activeCount * 0.8);
+
+            renderCuratorStudentList();
+            renderLeaderboard(studentNames, group);
+        }
+
+        function renderCuratorStudentList() {
+            const group = document.getElementById('curator-group-select').value;
+            const studentNames = group === '301 РПО' ? MOCK_STUDENTS_301_RPO : MOCK_STUDENTS_202_IS;
+            const searchText = document.getElementById('curator-filter-search').value.toLowerCase();
+            const filterStatus = document.getElementById('curator-filter-status').value;
+
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const tbody = document.getElementById('curator-students-tbody');
+
+            let filteredList = [];
+
+            studentNames.forEach((name, index) => {
+                const iin = getStudentIin(group, index);
+                const studentJournal = journals[iin] || {};
+
+                let filledDays = 0;
+                let pendingCount = 0;
+                let gradeSum = 0;
+                let gradeCount = 0;
+
+                for (let day = 1; day <= 30; day++) {
+                    const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                    const entry = studentJournal[dateStr];
+                    if (entry && entry.workDone) {
+                        filledDays++;
+                        if (entry.status === 'pending') pendingCount++;
+                        if (entry.grade > 0) {
+                            gradeSum += parseInt(entry.grade);
+                            gradeCount++;
+                        }
+                    }
+                }
+
+                const progressPct = Math.round((filledDays / 30) * 100);
+                const avgGrade = gradeCount > 0 ? (gradeSum / gradeCount).toFixed(1) : "0.0";
+
+                // Filtering logic
+                let matchesSearch = name.toLowerCase().includes(searchText);
+                let matchesStatus = true;
+
+                if (filterStatus === 'pending' && pendingCount === 0) matchesStatus = false;
+                if (filterStatus === 'low' && (parseFloat(avgGrade) >= 3.5 || avgGrade === "0.0")) matchesStatus = false;
+                if (filterStatus === 'full' && progressPct < 100) matchesStatus = false;
+
+                if (matchesSearch && matchesStatus) {
+                    filteredList.push({
+                        index: index + 1,
+                        name,
+                        iin,
+                        group,
+                        specialty: group === '301 РПО' ? "Бағдарламалық қамтамасыз ету" : "Ақпараттық жүйелер",
+                        company: "KazOilTrans / Ақтөбе IT",
+                        progressPct,
+                        avgGrade,
+                        pendingCount
+                    });
+                }
+            });
+
+            document.getElementById('curator-showing-count').innerText = filteredList.length;
+
+            if (filteredList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Студенттер табылмады</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredList.map(st => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                    <td class="px-4 py-3 font-medium text-gray-500">${st.index}</td>
+                    <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">${st.name}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${st.specialty}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${st.company}</td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <span class="text-xs font-bold">${st.progressPct}%</span>
+                            <div class="w-12 bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-brand-600 h-full" style="width: ${st.progressPct}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center font-bold text-brand-600">${st.avgGrade}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="inspectStudentJournal('${st.iin}', '${st.name}', '${st.group}')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1 mx-auto">
+                            <i class="fa-solid fa-eye"></i>
+                            <span>Журнал</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function inspectStudentJournal(iin, name, group) {
+            selectedStudentForCurator = { iin, name, group };
+            switchCuratorView('journal');
+        }
+
+        function switchCuratorView(viewId) {
+            navigateTo(viewId);
+        }
+
+        function renderLeaderboard(names, group) {
+            const container = document.getElementById('curator-leaderboard-list');
+            const topThree = [
+                { name: names[4] || names[0], score: "4.9", rank: "🥇 1-орын" },
+                { name: names[1] || names[1], score: "4.7", rank: "🥈 2-орын" },
+                { name: names[2] || names[2], score: "4.5", rank: "🥉 3-орын" }
+            ];
+
+            container.innerHTML = topThree.map(t => `
+                <div class="p-4 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-700 dark:to-gray-800 border border-red-100 dark:border-gray-700 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 block">${t.rank}</span>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white mt-0.5">${t.name}</h4>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block">Баға</span>
+                        <span class="text-lg font-extrabold text-brand-700 dark:text-red-400">${t.score}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // 7. CALENDAR & TASKS LOGIC
+        // ==========================================
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[targetIIN] || {};
+
+            let calendarHtml = '';
+            for (let day = 1; day <= 30; day++) {
+                const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                const entry = studentJournal[dateStr];
+
+                let statusColor = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300';
+                if (entry && entry.status === 'approved') {
+                    statusColor = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300';
+                } else if (entry && entry.status === 'pending') {
+                    statusColor = 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300';
+                }
+
+                calendarHtml += `
+                    <div onclick="openJournalModal('${dateStr}')" class="p-3 rounded-xl border ${statusColor} cursor-pointer hover:scale-105 transition flex flex-col items-center justify-between h-20 shadow-sm">
+                        <span class="font-bold text-sm">${day}</span>
+                        <span class="text-[10px] font-medium">${entry && entry.status === 'approved' ? '✓ Расталды' : (entry && entry.status === 'pending' ? '⌛ Тексеруде' : '✕ Бос')}</span>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = calendarHtml;
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            const tasks = JSON.parse(localStorage.getItem('pr_tasks') || '[]');
+
+            if (tasks.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">📝 Әзірге белсенді тапсырмалар жоқ.</div>`;
+                return;
+            }
+
+            container.innerHTML = tasks.map(t => `
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-3">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-semibold">${t.group}</span>
+                        <span class="text-xs text-red-500 font-medium"><i class="fa-regular fa-clock"></i> ${t.deadline}</span>
+                    </div>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white">${t.title}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">${t.description}</p>
+                    <div class="pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span class="text-xs font-semibold ${t.status === 'Орындалды' ? 'text-emerald-600' : 'text-amber-600'}">${t.status}</span>
+                        ${currentRole === 'student' && t.status !== 'Орындалды'
+                    ? `<button onclick="completeTask(${t.id})" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700">Орындау</button>`
+                    : ''
+                }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCreateTaskModal() {
+            openModal('modal-create-task');
+        }
+
+        function handleCreateTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value;
+            const description = document.getElementById('task-desc-input').value;
+            const deadline = document.getElementById('task-deadline-input').value;
+
+            const tasks = JSON.parse(localStorage.getItem('pr_tasks') || '[]');
+            tasks.push({
+                id: Date.now(),
+                title,
+                description,
+                deadline,
+                status: "Жаңа",
+                group: "301 РПО"
+            });
+
+            localStorage.setItem('pr_tasks', JSON.stringify(tasks));
+            closeModal('modal-create-task');
+            showToast("✓ Тапсырма сәтті қосылды!", "success");
+            renderTasks();
+        }
+
+        function completeTask(taskId) {
+            const tasks = JSON.parse(localStorage.getItem('pr_tasks') || '[]');
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = "Орындалды";
+                localStorage.setItem('pr_tasks', JSON.stringify(tasks));
+                showToast("✓ Тапсырма орындалды деп белгіленді!", "success");
+                renderTasks();
+            }
+        }
+
+        // ==========================================
+        // 8. GRADES, GALLERY & NOTIFICATIONS
+        // ==========================================
+        function renderGradesView() {
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[targetIIN] || {};
+
+            let totalGrade = 0;
+            let maxGrade = 0;
+            let gradedCount = 0;
+            let breakdownHtml = '';
+
+            for (let day = 1; day <= 30; day++) {
+                const dateStr = `${day < 10 ? '0' + day : day}.09.2026`;
+                const entry = studentJournal[dateStr];
+                if (entry && entry.grade > 0) {
+                    gradedCount++;
+                    totalGrade += parseInt(entry.grade);
+                    if (parseInt(entry.grade) > maxGrade) maxGrade = parseInt(entry.grade);
+
+                    breakdownHtml += `
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-xs">
+                            <span class="font-semibold text-gray-800 dark:text-gray-200">${dateStr}</span>
+                            <span class="text-gray-500">${entry.curatorComment || 'Пікірсіз'}</span>
+                            <span class="font-bold text-brand-600 text-sm">${entry.grade} / 5</span>
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('grades-avg-score').innerText = gradedCount > 0 ? (totalGrade / gradedCount).toFixed(1) : "0.0";
+            document.getElementById('grades-max-score').innerText = maxGrade;
+            document.getElementById('grades-count').innerText = gradedCount;
+            document.getElementById('grades-breakdown-list').innerHTML = breakdownHtml || `<div class="text-center py-4 text-gray-400 text-xs">Әзірге бағалар қойылмаған.</div>`;
+        }
+
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            const targetIIN = (currentRole === 'curator' && selectedStudentForCurator) ? selectedStudentForCurator.iin : currentUser.iin;
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const studentJournal = journals[targetIIN] || {};
+
+            let allMedia = [];
+            Object.keys(studentJournal).forEach(dateStr => {
+                const entry = studentJournal[dateStr];
+                if (entry.media) {
+                    entry.media.forEach(m => allMedia.push({ ...m, date: dateStr }));
+                }
+            });
+
+            if (allMedia.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">📷 Жүктелген фото/видеолар жоқ.</div>`;
+                return;
+            }
+
+            grid.innerHTML = allMedia.map(m => `
+                <div class="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 h-36 bg-gray-100">
+                    ${m.type === 'photo'
+                    ? `<img src="${m.url}" class="w-full h-full object-cover">`
+                    : `<video src="${m.url}" class="w-full h-full object-cover"></video>`
+                }
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-2 text-white text-[10px]">
+                        <span class="font-bold">${m.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterGallery(type) {
+            renderGallery(); // Dynamic filter extension stub
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notifications-list');
+            const notifs = JSON.parse(localStorage.getItem('pr_notifications') || '[]');
+
+            if (notifs.length === 0) {
+                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">📭 Хабарламалар жоқ.</div>`;
+                return;
+            }
+
+            list.innerHTML = notifs.map(n => `
+                <div class="p-4 rounded-xl border ${n.read ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-red-50 dark:bg-red-950/30 border-red-200'} text-xs flex justify-between items-start">
+                    <div>
+                        <p class="font-medium text-gray-800 dark:text-gray-200">${n.text}</p>
+                        <span class="text-[10px] text-gray-400 mt-1 block">${n.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function markAllNotificationsRead() {
+            const notifs = JSON.parse(localStorage.getItem('pr_notifications') || '[]');
+            notifs.forEach(n => n.read = true);
+            localStorage.setItem('pr_notifications', JSON.stringify(notifs));
+            renderNotifications();
+            showToast("Барлығы оқылды", "info");
+        }
+
+        function loadProfileView() {
+            if (!currentUser) return;
+            document.getElementById('profile-full-name').innerText = currentUser.name || "Елубаев Бегарыс";
+            document.getElementById('profile-role-text').innerText = `${currentUser.role === 'student' ? 'Студент' : 'Куратор'} • ${currentUser.group || '301 РПО'}`;
+            document.getElementById('profile-avatar-large').innerText = getInitials(currentUser.name || "U");
+            document.getElementById('profile-iin').innerText = currentUser.iin || "123456789012";
+            document.getElementById('profile-spec').innerText = currentUser.specialty || "Бағдарламалық қамтамасыз ету";
+            document.getElementById('profile-company').innerText = currentUser.company || "KazOilTrans";
+            document.getElementById('profile-curator').innerText = currentUser.curator || "Ерланова А.";
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const newPass = document.getElementById('new-password-input').value;
+            if (newPass) {
+                showToast("✓ Пароль сәтті жаңартылды!", "success");
+                document.getElementById('new-password-input').value = '';
+            }
+        }
+
+        // ==========================================
+        // 9. SYSTEM HELPERS & UTILITIES
+        // ==========================================
+        function toggleSidebar(show) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (show === undefined) {
+                sidebar.classList.toggle('-translate-x-full');
+                backdrop.classList.toggle('hidden');
+            } else if (show) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => toggleSidebar(true));
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-moon";
+                localStorage.setItem('pr_theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-sun";
+                localStorage.setItem('pr_theme', 'dark');
+            }
+        }
+
+        function toggleLanguage() {
+            activeLanguage = activeLanguage === 'kk' ? 'ru' : 'kk';
+            document.getElementById('lang-label').innerText = activeLanguage === 'kk' ? 'ҚАЗ' : 'РУС';
+            updateLanguageUI();
+        }
+
+        function updateLanguageUI() {
+            const langDict = TRANSLATIONS[activeLanguage];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (langDict[key]) el.innerText = langDict[key];
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let colors = "bg-gray-800 text-white";
+            if (type === 'success') colors = "bg-emerald-600 text-white";
+            if (type === 'error') colors = "bg-red-600 text-white";
+            if (type === 'warning') colors = "bg-amber-500 text-white";
+
+            toast.className = `${colors} px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 fade-in pointer-events-auto`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function exportData() {
+            window.print();
+        }
+
+        function downloadDoc(fileName) {
+            showToast(`Жүктелуде: ${fileName}`, "info");
+        }
+
+        function handleGlobalSearch(query) {
+            if (currentRole === 'curator') {
+                document.getElementById('curator-filter-search').value = query;
+                renderCuratorStudentList();
+            }
+        }
+    </script>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+        import { getFirestore, doc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBKchs6GEiaIJX8KeQspxlyWe_hu16X6Gk",
+            authDomain: "bekarys-26ef4.firebaseapp.com",
+            projectId: "bekarys-26ef4",
+            storageBucket: "bekarys-26ef4.firebasestorage.app",
+            messagingSenderId: "955711994138",
+            appId: "1:955711994138:web:b1ad64810ea13479d3d4a3",
+            measurementId: "G-3DQ8L9ZREW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        isSupported().then((supported) => {
+            if (supported) {
+                getAnalytics(app);
+            }
+        });
+
+        async function createDemoAccount(email, password, legacyPassword = '') {
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    try {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    } catch (signInError) {
+                        if (!legacyPassword) throw signInError;
+                        await signInWithEmailAndPassword(auth, email, legacyPassword);
+                        await updatePassword(auth.currentUser, password);
+                    }
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        async function seedFirebaseData() {
+            if (localStorage.getItem('pr_firebase_seeded_v3') === 'true') return;
+
+            const students = (window.practiceSeedStudents || []).map(student => ({ ...student }));
+
+            for (const [index, student] of students.entries()) {
+                const email = student.iin === '123456789012'
+                    ? '123456789012@student.bekarys.kz'
+                    : `${student.iin}@student.bekarys.kz`;
+                const password = `00${student.iin.slice(-4)}`;
+                const legacyPassword = student.iin === '123456789012'
+                    ? 'student123'
+                    : `Student2026!${index + 1}`;
+                student.email = email;
+                student.loginMethod = 'iin_plus_last_4_digits';
+                student.passwordHint = 'Последние 4 цифры ИИН';
+                await createDemoAccount(email, password, legacyPassword);
+            }
+            await createDemoAccount('curator01@bekarys.kz', 'curator123');
+
+            const batch = writeBatch(db);
+            const journals = JSON.parse(localStorage.getItem('pr_journals') || '{}');
+            const tasks = JSON.parse(localStorage.getItem('pr_tasks') || '[]');
+            const notifications = JSON.parse(localStorage.getItem('pr_notifications') || '[]');
+
+            students.forEach((student) => {
+                batch.set(doc(db, 'students', student.iin), {
+                    ...student,
+                    curator: 'Ерланова А.',
+                    createdAt: serverTimestamp()
+                }, { merge: true });
+            });
+
+            batch.set(doc(db, 'users', 'curator01'), {
+                role: 'curator',
+                username: 'curator01',
+                name: 'Ерланова А.',
+                group: 'Куратор (301 РПО, 202 ИС)',
+                email: 'curator01@bekarys.kz',
+                createdAt: serverTimestamp()
+            }, { merge: true });
+
+            Object.entries(journals).forEach(([iin, entries]) => {
+                batch.set(doc(db, 'journals', iin), { iin, entries, updatedAt: serverTimestamp() }, { merge: true });
+            });
+
+            batch.set(doc(db, 'appData', 'tasks'), { items: tasks, updatedAt: serverTimestamp() }, { merge: true });
+            batch.set(doc(db, 'appData', 'notifications'), { items: notifications, updatedAt: serverTimestamp() }, { merge: true });
+
+            await batch.commit();
+            await signOut(auth);
+            localStorage.setItem('pr_firebase_seeded_v3', 'true');
+            console.info('Firebase seed completed');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            seedFirebaseData().catch((error) => {
+                console.error('Firebase seed failed:', error);
+            });
+        });
+    </script>
+</body>
+
+</html>
